@@ -3,6 +3,16 @@
 from lxml import etree
 
 
+BASE = '/ShipmentResponse%s'
+HEADER = BASE % '/Response/ServiceHeader%s'
+PIECES = BASE % '/Pieces%s'
+BARCODES = BASE % '/Barcodes%s'
+CONSIGNEE = BASE % '/Consignee%s'
+CONSIGNEE_CONTACT = CONSIGNEE % '/Contact%s'
+SHIPPER = BASE % '/Shipper%s'
+SHIPPER_CONTACT = SHIPPER % '/Contact%s'
+
+
 class XMLNamespaces:
    req = 'http://www.dhl.com'
    xsi = 'http://www.w3.org/2001/XMLSchema-instance'
@@ -10,7 +20,15 @@ class XMLNamespaces:
    schemaVersion = '1.0'
 
 
-def quote_init_xml(arg1, arg2):
+def xpath_ns(tree, expr):
+    "Parse a simple expression and prepend namespace wildcards where unspecified."
+    qual = lambda n: n if not n or ':' in n else '*[local-name() = "%s"]' % n
+    expr = '/'.join(qual(n) for n in expr.split('/'))
+    nsmap = dict((k, v) for k, v in tree.nsmap.items() if k)
+    return tree.xpath(expr, namespaces=nsmap)
+
+
+def quote_req(arg1, arg2):
     root = etree.Element(
             etree.QName(XMLNamespaces.req, 'DCTRequest'),
             nsmap = {"req": XMLNamespaces.req}
@@ -87,7 +105,7 @@ def quote_init_xml(arg1, arg2):
     declared_value.text = "10"
     return etree.tostring(root, xml_declaration=True, encoding='utf-8')
 
-def shipment_init_xml(arg1, arg2, arg3):
+def shipment_req(arg1, arg2, arg3):
     root = etree.Element(
         etree.QName(XMLNamespaces.req, 'ShipmentRequest'),
         attrib={
@@ -251,3 +269,85 @@ def shipment_init_xml(arg1, arg2, arg3):
     label_image_format.text = "PDF"
 
     return etree.tostring(root, xml_declaration=True, encoding='utf-8')
+
+def shipment_resp(content):
+    xml = etree.fromstring(content)
+    # print etree.tostring(xml, pretty_print=True)
+
+    MessageTime = xpath_ns(xml, HEADER % '/MessageTime')[0].text
+    MessageReference = xpath_ns(xml, HEADER % '/MessageReference')[0].text
+    SiteID = xpath_ns(xml, HEADER % '/SiteID')[0].text
+
+    ActionNote = xpath_ns(xml, BASE % '/Note/ActionNote')[0].text
+    AirwayBillNumber = xpath_ns(xml, BASE % '/AirwayBillNumber')[0].text
+    BillingCode = xpath_ns(xml, BASE % '/BillingCode')[0].text
+    CurrencyCode = xpath_ns(xml, BASE % '/CurrencyCode')[0].text
+    Rated = xpath_ns(xml, BASE % '/Rated')[0].text
+    WeightUnit = xpath_ns(xml, BASE % '/WeightUnit')[0].text
+    CountryCode = xpath_ns(xml, BASE % '/CountryCode')[0].text
+
+    DataIdentifier = xpath_ns(xml, PIECES % '/Piece/DataIdentifier')[0].text
+    LicensePlate = xpath_ns(xml, PIECES % '/Piece/LicensePlate')[0].text
+    LicensePlateBarCode = xpath_ns(xml, PIECES % '/Piece/LicensePlateBarCode')[0].text
+
+    AWBBarCode = xpath_ns(xml, BARCODES % '/AWBBarCode')[0].text
+    OriginDestnBarcode = xpath_ns(xml, BARCODES % '/OriginDestnBarcode')[0].text
+    DHLRoutingBarCode = xpath_ns(xml, BARCODES % '/DHLRoutingBarCode')[0].text
+
+    Contents = xpath_ns(xml, BASE % '/Contents')[0].text
+
+    Consignee_CompanyName = xpath_ns(xml, CONSIGNEE % '/CompanyName')[0].text
+    Consignee_CountryCode = xpath_ns(xml, CONSIGNEE % '/CountryCode')[0].text
+    Consignee_CountryName = xpath_ns(xml, CONSIGNEE % '/CountryName')[0].text
+
+    Consignee_PersonName = xpath_ns(xml, CONSIGNEE_CONTACT % '/PersonName')[0].text
+    Consignee_PhoneNumber = xpath_ns(xml, CONSIGNEE_CONTACT % '/PhoneNumber')[0].text
+
+    ShipperID = xpath_ns(xml, SHIPPER % '/ShipperID')[0].text
+    Shipper_CompanyName = xpath_ns(xml, SHIPPER % '/CompanyName')[0].text
+    Shipper_AddressLine = xpath_ns(xml, SHIPPER % '/AddressLine')[0].text
+    Shipper_CountryCode = xpath_ns(xml, SHIPPER % '/CountryCode')[0].text
+    Shipper_CountryName = xpath_ns(xml, SHIPPER % '/CountryName')[0].text
+
+    Shipper_PersonName = xpath_ns(xml, SHIPPER_CONTACT % '/PersonName')[0].text
+    Shipper_PhoneNumber = xpath_ns(xml, SHIPPER_CONTACT % '/PhoneNumber')[0].text
+
+    CustomerID = xpath_ns(xml, BASE % '/CustomerID')[0].text
+    ShipmentDate = xpath_ns(xml, BASE % '/ShipmentDate')[0].text
+    GlobalProductCode = xpath_ns(xml, BASE % '/GlobalProductCode')[0].text
+    
+    parsed_resp = {
+        'MessageTime': MessageTime,
+        'MessageReference': MessageReference,
+        'SiteID': SiteID,
+        'ActionNote': ActionNote,
+        'AirwayBillNumber': AirwayBillNumber,
+        'BillingCode': BillingCode,
+        'CurrencyCode': CurrencyCode,
+        'Rated': Rated,
+        'WeightUnit': WeightUnit,
+        'CountryCode': CountryCode,
+        'DataIdentifier': DataIdentifier,
+        'LicensePlate': LicensePlate,
+        'LicensePlateBarCode': LicensePlateBarCode,
+        'AWBBarCode': AWBBarCode,
+        'OriginDestnBarcode': OriginDestnBarcode,
+        'DHLRoutingBarCode': DHLRoutingBarCode,
+        'Contents': Contents,
+        'Consignee_CompanyName': Consignee_CompanyName,
+        'Consignee_CountryCode': Consignee_CountryCode,
+        'Consignee_CountryName': Consignee_CountryName,
+        'Consignee_PersonName': Consignee_PersonName,
+        'Consignee_PhoneNumber': Consignee_PhoneNumber,
+        'ShipperID': ShipperID,
+        'Shipper_CompanyName': Shipper_CompanyName,
+        'Shipper_AddressLine': Shipper_AddressLine,
+        'Shipper_CountryCode': Shipper_CountryCode,
+        'Shipper_CountryName': Shipper_CountryName,
+        'Shipper_PersonName': Shipper_PersonName,
+        'Shipper_PhoneNumber': Shipper_PhoneNumber,
+        'CustomerID': CustomerID,
+        'ShipmentDate': ShipmentDate,
+        'GlobalProductCode': GlobalProductCode,
+    }
+    return parsed_resp
