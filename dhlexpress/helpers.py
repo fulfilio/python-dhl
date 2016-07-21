@@ -12,16 +12,20 @@ CONSIGNEE_CONTACT = CONSIGNEE % '/Contact%s'
 SHIPPER = BASE % '/Shipper%s'
 SHIPPER_CONTACT = SHIPPER % '/Contact%s'
 
+SCHEMALOC = "{%s}schemaLocation"
+
 
 class XMLNamespaces:
-   req = 'http://www.dhl.com'
-   xsi = 'http://www.w3.org/2001/XMLSchema-instance'
-   schemaLocation = 'http://www.dhl.com ship-val-global-req.xsd'
-   schemaVersion = '1.0'
+    req = 'http://www.dhl.com'
+    xsi = 'http://www.w3.org/2001/XMLSchema-instance'
+    schemaLocation = 'http://www.dhl.com ship-val-global-req.xsd'
+    schemaVersion = '1.0'
 
 
 def xpath_ns(tree, expr):
-    "Parse a simple expression and prepend namespace wildcards where unspecified."
+    """Parse a simple expression and
+    prepend namespace wildcards where unspecified."""
+
     qual = lambda n: n if not n or ':' in n else '*[local-name() = "%s"]' % n
     expr = '/'.join(qual(n) for n in expr.split('/'))
     nsmap = dict((k, v) for k, v in tree.nsmap.items() if k)
@@ -31,7 +35,9 @@ def xpath_ns(tree, expr):
 def quote_req(arg1, arg2):
     root = etree.Element(
             etree.QName(XMLNamespaces.req, 'DCTRequest'),
-            nsmap = {"req": XMLNamespaces.req}
+            nsmap={
+                "req": XMLNamespaces.req
+            }
         )
     capability = etree.SubElement(root, "GetCapability")
     request = etree.SubElement(capability, "Request")
@@ -105,14 +111,17 @@ def quote_req(arg1, arg2):
     declared_value.text = "10"
     return etree.tostring(root, xml_declaration=True, encoding='utf-8')
 
+
 def shipment_req(arg1, arg2, arg3):
     root = etree.Element(
-        etree.QName(XMLNamespaces.req, 'ShipmentRequest'),
+        etree.QName(
+            XMLNamespaces.req, 'ShipmentRequest'
+        ),
         attrib={
-            "{" + XMLNamespaces.xsi + "}schemaLocation" : XMLNamespaces.schemaLocation,
-            "schemaVersion" : XMLNamespaces.schemaVersion
+            SCHEMALOC % XMLNamespaces.xsi: XMLNamespaces.schemaLocation,
+            "schemaVersion": XMLNamespaces.schemaVersion
         },
-        nsmap = {
+        nsmap={
             "req": XMLNamespaces.req,
             "xsi": XMLNamespaces.xsi,
         }
@@ -191,7 +200,7 @@ def shipment_req(arg1, arg2, arg3):
     no_pieces = etree.SubElement(shipment_details, "NumberOfPieces")
     no_pieces.text = "1"
     pieces = etree.SubElement(shipment_details, "Pieces")
-    
+
     piece = etree.SubElement(pieces, "Piece")
     pieceid = etree.SubElement(piece, "PieceID")
     pieceid.text = "1"
@@ -208,9 +217,13 @@ def shipment_req(arg1, arg2, arg3):
     weight.text = "20"
     weight_unit = etree.SubElement(shipment_details, "WeightUnit")
     weight_unit.text = "L"
-    global_product_code = etree.SubElement(shipment_details, "GlobalProductCode")
+    global_product_code = etree.SubElement(
+        shipment_details, "GlobalProductCode"
+    )
     global_product_code.text = "P"
-    local_product_code = etree.SubElement(shipment_details, "LocalProductCode")
+    local_product_code = etree.SubElement(
+        shipment_details, "LocalProductCode"
+    )
     local_product_code.text = "P"
     date = etree.SubElement(shipment_details, "Date")
     date.text = "2016-07-21"
@@ -241,8 +254,8 @@ def shipment_req(arg1, arg2, arg3):
     city = etree.SubElement(shipper, "City")
     city.text = "Tempe"
 
-    division = etree.SubElement(shipper, "Division")
-    division_code = etree.SubElement(shipper, "DivisionCode")
+    etree.SubElement(shipper, "Division")
+    etree.SubElement(shipper, "DivisionCode")
     postal_code = etree.SubElement(shipper, "PostalCode")
     postal_code.text = "1000001"
     origin_service_code = etree.SubElement(shipper, "OriginServiceAreaCode")
@@ -270,6 +283,7 @@ def shipment_req(arg1, arg2, arg3):
 
     return etree.tostring(root, xml_declaration=True, encoding='utf-8')
 
+
 def shipment_resp(content):
     xml = etree.fromstring(content)
     # print etree.tostring(xml, pretty_print=True)
@@ -288,10 +302,14 @@ def shipment_resp(content):
 
     DataIdentifier = xpath_ns(xml, PIECES % '/Piece/DataIdentifier')[0].text
     LicensePlate = xpath_ns(xml, PIECES % '/Piece/LicensePlate')[0].text
-    LicensePlateBarCode = xpath_ns(xml, PIECES % '/Piece/LicensePlateBarCode')[0].text
+    LicensePlateBarCode = xpath_ns(
+        xml, PIECES % '/Piece/LicensePlateBarCode'
+    )[0].text
 
     AWBBarCode = xpath_ns(xml, BARCODES % '/AWBBarCode')[0].text
-    OriginDestnBarcode = xpath_ns(xml, BARCODES % '/OriginDestnBarcode')[0].text
+    OriginDestnBarcode = xpath_ns(
+        xml, BARCODES % '/OriginDestnBarcode'
+    )[0].text
     DHLRoutingBarCode = xpath_ns(xml, BARCODES % '/DHLRoutingBarCode')[0].text
 
     Contents = xpath_ns(xml, BASE % '/Contents')[0].text
@@ -300,8 +318,12 @@ def shipment_resp(content):
     Consignee_CountryCode = xpath_ns(xml, CONSIGNEE % '/CountryCode')[0].text
     Consignee_CountryName = xpath_ns(xml, CONSIGNEE % '/CountryName')[0].text
 
-    Consignee_PersonName = xpath_ns(xml, CONSIGNEE_CONTACT % '/PersonName')[0].text
-    Consignee_PhoneNumber = xpath_ns(xml, CONSIGNEE_CONTACT % '/PhoneNumber')[0].text
+    Consignee_PersonName = xpath_ns(
+        xml, CONSIGNEE_CONTACT % '/PersonName'
+    )[0].text
+    Consignee_PhoneNumber = xpath_ns(
+        xml, CONSIGNEE_CONTACT % '/PhoneNumber'
+    )[0].text
 
     ShipperID = xpath_ns(xml, SHIPPER % '/ShipperID')[0].text
     Shipper_CompanyName = xpath_ns(xml, SHIPPER % '/CompanyName')[0].text
@@ -309,13 +331,17 @@ def shipment_resp(content):
     Shipper_CountryCode = xpath_ns(xml, SHIPPER % '/CountryCode')[0].text
     Shipper_CountryName = xpath_ns(xml, SHIPPER % '/CountryName')[0].text
 
-    Shipper_PersonName = xpath_ns(xml, SHIPPER_CONTACT % '/PersonName')[0].text
-    Shipper_PhoneNumber = xpath_ns(xml, SHIPPER_CONTACT % '/PhoneNumber')[0].text
+    Shipper_PersonName = xpath_ns(
+        xml, SHIPPER_CONTACT % '/PersonName'
+    )[0].text
+    Shipper_PhoneNumber = xpath_ns(
+        xml, SHIPPER_CONTACT % '/PhoneNumber'
+    )[0].text
 
     CustomerID = xpath_ns(xml, BASE % '/CustomerID')[0].text
     ShipmentDate = xpath_ns(xml, BASE % '/ShipmentDate')[0].text
     GlobalProductCode = xpath_ns(xml, BASE % '/GlobalProductCode')[0].text
-    
+
     parsed_resp = {
         'MessageTime': MessageTime,
         'MessageReference': MessageReference,

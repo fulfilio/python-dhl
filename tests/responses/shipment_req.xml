@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='utf-8'?>
+<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.0" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd">
+  <Request>
+    <ServiceHeader>
+      <MessageTime>2011-03-16T14:57:20-07:00</MessageTime>
+      <MessageReference>718688fff23f46f49d7cf9b67cd40d4e</MessageReference>
+      <SiteID>xmlPavlok</SiteID>
+      <Password>x6hB7Gn23o</Password>
+    </ServiceHeader>
+  </Request>
+  <RegionCode>EU</RegionCode>
+  <RequestedPickupTime>Y</RequestedPickupTime>
+  <NewShipper>Y</NewShipper>
+  <LanguageCode>en</LanguageCode>
+  <PiecesEnabled>Y</PiecesEnabled>
+  <Billing>
+    <ShipperAccountNumber>847570971</ShipperAccountNumber>
+    <ShippingPaymentType>S</ShippingPaymentType>
+    <BillingAccountNumber>847570971</BillingAccountNumber>
+    <DutyPaymentType>R</DutyPaymentType>
+  </Billing>
+  <Consignee>
+    <CompanyName>Consignee Company Name</CompanyName>
+    <AddressLine>Consignee Address line 1</AddressLine>
+    <City>Tokyo</City>
+    <PostalCode>1000001</PostalCode>
+    <CountryCode>JP</CountryCode>
+    <CountryName>Japan</CountryName>
+    <Contact>
+      <PersonName>Consignee Contact</PersonName>
+      <PhoneNumber>1234567890</PhoneNumber>
+    </Contact>
+  </Consignee>
+  <Dutiable>
+    <DeclaredValue>1000</DeclaredValue>
+    <DeclaredCurrency>USD</DeclaredCurrency>
+    <TermsOfTrade>DAP</TermsOfTrade>
+    <Filing>
+      <FilingType>FTR</FilingType>
+      <FTSR>30.37(a)</FTSR>
+    </Filing>
+  </Dutiable>
+  <Reference>
+    <ReferenceID>Shipment Reference Type</ReferenceID>
+  </Reference>
+  <ShipmentDetails>
+    <NumberOfPieces>1</NumberOfPieces>
+    <Pieces>
+      <Piece>
+        <PieceID>1</PieceID>
+        <Weight>20</Weight>
+        <Width>10</Width>
+        <Height>10</Height>
+        <Depth>10</Depth>
+      </Piece>
+    </Pieces>
+    <Weight>20</Weight>
+    <WeightUnit>L</WeightUnit>
+    <GlobalProductCode>P</GlobalProductCode>
+    <LocalProductCode>P</LocalProductCode>
+    <Date>2016-07-21</Date>
+    <Contents>Shipment Description Here</Contents>
+    <DoorTo>DA</DoorTo>
+    <DimensionUnit>I</DimensionUnit>
+    <InsuredAmount>4</InsuredAmount>
+    <PackageType>EE</PackageType>
+    <IsDutiable>Y</IsDutiable>
+    <CurrencyCode>USD</CurrencyCode>
+  </ShipmentDetails>
+  <Shipper>
+    <ShipperID>847570971</ShipperID>
+    <CompanyName>Shipper Company Name</CompanyName>
+    <RegisteredAccount>847570971</RegisteredAccount>
+    <AddressLine>Shipper AddressLine 1</AddressLine>
+    <City>Tempe</City>
+    <Division/>
+    <DivisionCode/>
+    <PostalCode>1000001</PostalCode>
+    <OriginServiceAreaCode>100</OriginServiceAreaCode>
+    <OriginFacilityCode>100</OriginFacilityCode>
+    <CountryCode>US</CountryCode>
+    <CountryName>United States</CountryName>
+    <FederalTaxId>AF354HBU</FederalTaxId>
+    <StateTaxId>79JNG7d</StateTaxId>
+    <Contact>
+      <PersonName>Shipper Contact</PersonName>
+      <PhoneNumber>1234567890</PhoneNumber>
+    </Contact>
+    <Suburb>Suburb</Suburb>
+  </Shipper>
+  <LabelImageFormat>PDF</LabelImageFormat>
+</req:ShipmentRequest>
+
