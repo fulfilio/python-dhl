@@ -4,8 +4,8 @@
     <ServiceHeader>
       <MessageTime>2011-03-16T14:57:20-07:00</MessageTime>
       <MessageReference>718688fff23f46f49d7cf9b67cd40d4e</MessageReference>
-      <SiteID>xmlPavlok</SiteID>
-      <Password>x6hB7Gn23o</Password>
+      <SiteID>siteId</SiteID>
+      <Password>password</Password>
     </ServiceHeader>
   </Request>
   <RegionCode>EU</RegionCode>

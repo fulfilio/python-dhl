@@ -3,16 +3,14 @@
 from lxml import etree
 
 
-BASE = '/ShipmentResponse%s'
-HEADER = BASE % '/Response/ServiceHeader%s'
-PIECES = BASE % '/Pieces%s'
-BARCODES = BASE % '/Barcodes%s'
-CONSIGNEE = BASE % '/Consignee%s'
-CONSIGNEE_CONTACT = CONSIGNEE % '/Contact%s'
-SHIPPER = BASE % '/Shipper%s'
-SHIPPER_CONTACT = SHIPPER % '/Contact%s'
+SHIPMENT_BASE = '/ShipmentResponse%s'
+SHIPMENT_HEADER = SHIPMENT_BASE % '/Response/ServiceHeader%s'
+
 
 SCHEMALOC = "{%s}schemaLocation"
+
+QUOTE_BASE = '/DCTResponse/GetQuoteResponse%s'
+QUOTE_HEADER = QUOTE_BASE % '/Response/ServiceHeader%s'
 
 
 class XMLNamespaces:
@@ -24,9 +22,10 @@ class XMLNamespaces:
 
 def xpath_ns(tree, expr):
     """Parse a simple expression and
-    prepend namespace wildcards where unspecified."""
+    prepend namespace wildcards where unspecified.
+    To ignore use of namespaces explicitly"""
 
-    qual = lambda n: n if not n or ':' in n else '*[local-name() = "%s"]' % n
+    qual = lambda n: n if not n or ':' in n else '*[local-name() = "%s"]' % n  # noqa
     expr = '/'.join(qual(n) for n in expr.split('/'))
     nsmap = dict((k, v) for k, v in tree.nsmap.items() if k)
     return tree.xpath(expr, namespaces=nsmap)
@@ -34,12 +33,12 @@ def xpath_ns(tree, expr):
 
 def quote_req(arg1, arg2):
     root = etree.Element(
-            etree.QName(XMLNamespaces.req, 'DCTRequest'),
-            nsmap={
-                "req": XMLNamespaces.req
-            }
-        )
-    capability = etree.SubElement(root, "GetCapability")
+        etree.QName(XMLNamespaces.req, 'DCTRequest'),
+        nsmap={
+            "req": XMLNamespaces.req
+        }
+    )
+    capability = etree.SubElement(root, "GetQuote")
     request = etree.SubElement(capability, "Request")
 
     serviceheader = etree.SubElement(request, "ServiceHeader")
@@ -110,6 +109,52 @@ def quote_req(arg1, arg2):
     declared_value = etree.SubElement(dutiable, "DeclaredValue")
     declared_value.text = "10"
     return etree.tostring(root, xml_declaration=True, encoding='utf-8')
+
+
+def quote_resp(content):
+    xml = etree.fromstring(content)
+    # print etree.tostring(xml, pretty_print=True)
+
+    MessageTime = xpath_ns(xml, QUOTE_HEADER % '/MessageTime')[0].text
+    MessageReference = xpath_ns(
+        xml,
+        QUOTE_HEADER % '/MessageReference'
+    )[0].text
+    SiteID = xpath_ns(xml, QUOTE_HEADER % '/SiteID')[0].text
+    QtdShps = []
+
+    QtdShpList = xpath_ns(xml, '//QtdShp')
+    # TODO Check elements for None
+    for ele in QtdShpList:
+        if not ele.find('./CurrencyCode') is None:
+            curr_code = ele.find('./CurrencyCode').text
+        else:
+            curr_code = ''
+        QtdShp = {
+            'GlobalProductCode': ele.find('./GlobalProductCode').text,
+            'ProductShortName': ele.find('./ProductShortName').text,
+            'PickupDate': ele.find('./PickupDate').text,
+            'BookingTime': ele.find('./BookingTime').text,
+            'CurrencyCode': curr_code,
+            'ExchangeRate': ele.find('./ExchangeRate').text,
+            'WeightCharge': ele.find('./WeightCharge').text,
+            'WeightChargeTax': ele.find('./WeightChargeTax').text,
+            'TotalTransitDays': ele.find('./TotalTransitDays').text,
+            'DeliveryDate': ele.find('./DeliveryDate').text,
+            'DeliveryTime': ele.find('./DeliveryTime').text,
+            'DimensionalWeight': ele.find('./DimensionalWeight').text,
+            'WeightUnit': ele.find('./WeightUnit').text,
+            'ShippingCharge': ele.find('./ShippingCharge').text,
+        }
+        QtdShps.append(QtdShp)
+
+    parsed_resp = {
+        'MessageTime': MessageTime,
+        'MessageReference': MessageReference,
+        'SiteID': SiteID,
+        'QtdShps': QtdShps,
+    }
+    return parsed_resp
 
 
 def shipment_req(arg1, arg2, arg3):
@@ -288,92 +333,48 @@ def shipment_resp(content):
     xml = etree.fromstring(content)
     # print etree.tostring(xml, pretty_print=True)
 
-    MessageTime = xpath_ns(xml, HEADER % '/MessageTime')[0].text
-    MessageReference = xpath_ns(xml, HEADER % '/MessageReference')[0].text
-    SiteID = xpath_ns(xml, HEADER % '/SiteID')[0].text
-
-    ActionNote = xpath_ns(xml, BASE % '/Note/ActionNote')[0].text
-    AirwayBillNumber = xpath_ns(xml, BASE % '/AirwayBillNumber')[0].text
-    BillingCode = xpath_ns(xml, BASE % '/BillingCode')[0].text
-    CurrencyCode = xpath_ns(xml, BASE % '/CurrencyCode')[0].text
-    Rated = xpath_ns(xml, BASE % '/Rated')[0].text
-    WeightUnit = xpath_ns(xml, BASE % '/WeightUnit')[0].text
-    CountryCode = xpath_ns(xml, BASE % '/CountryCode')[0].text
-
-    DataIdentifier = xpath_ns(xml, PIECES % '/Piece/DataIdentifier')[0].text
-    LicensePlate = xpath_ns(xml, PIECES % '/Piece/LicensePlate')[0].text
-    LicensePlateBarCode = xpath_ns(
-        xml, PIECES % '/Piece/LicensePlateBarCode'
+    MessageTime = xpath_ns(xml, SHIPMENT_HEADER % '/MessageTime')[0].text
+    MessageReference = xpath_ns(
+        xml,
+        SHIPMENT_HEADER % '/MessageReference'
     )[0].text
+    SiteID = xpath_ns(xml, SHIPMENT_HEADER % '/SiteID')[0].text
 
-    AWBBarCode = xpath_ns(xml, BARCODES % '/AWBBarCode')[0].text
-    OriginDestnBarcode = xpath_ns(
-        xml, BARCODES % '/OriginDestnBarcode'
+    ActionNote = xpath_ns(xml, SHIPMENT_BASE % '/Note/ActionNote')[0].text
+    CurrencyCode = xpath_ns(xml, SHIPMENT_BASE % '/CurrencyCode')[0].text
+    Contents = xpath_ns(xml, SHIPMENT_BASE % '/Contents')[0].text
+    ShipmentDate = xpath_ns(xml, SHIPMENT_BASE % '/ShipmentDate')[0].text
+    GlobalProductCode = xpath_ns(
+        xml,
+        SHIPMENT_BASE % '/GlobalProductCode'
     )[0].text
-    DHLRoutingBarCode = xpath_ns(xml, BARCODES % '/DHLRoutingBarCode')[0].text
+    Label = xpath_ns(xml, SHIPMENT_BASE % '/LabelImage')[0]
+    LabelImage = {
+        'OutputFormat': Label.find('./OutputFormat').text,
+        'OutputImage': Label.find('./OutputImage').text,
+    }
 
-    Contents = xpath_ns(xml, BASE % '/Contents')[0].text
+    Pieces = []
 
-    Consignee_CompanyName = xpath_ns(xml, CONSIGNEE % '/CompanyName')[0].text
-    Consignee_CountryCode = xpath_ns(xml, CONSIGNEE % '/CountryCode')[0].text
-    Consignee_CountryName = xpath_ns(xml, CONSIGNEE % '/CountryName')[0].text
-
-    Consignee_PersonName = xpath_ns(
-        xml, CONSIGNEE_CONTACT % '/PersonName'
-    )[0].text
-    Consignee_PhoneNumber = xpath_ns(
-        xml, CONSIGNEE_CONTACT % '/PhoneNumber'
-    )[0].text
-
-    ShipperID = xpath_ns(xml, SHIPPER % '/ShipperID')[0].text
-    Shipper_CompanyName = xpath_ns(xml, SHIPPER % '/CompanyName')[0].text
-    Shipper_AddressLine = xpath_ns(xml, SHIPPER % '/AddressLine')[0].text
-    Shipper_CountryCode = xpath_ns(xml, SHIPPER % '/CountryCode')[0].text
-    Shipper_CountryName = xpath_ns(xml, SHIPPER % '/CountryName')[0].text
-
-    Shipper_PersonName = xpath_ns(
-        xml, SHIPPER_CONTACT % '/PersonName'
-    )[0].text
-    Shipper_PhoneNumber = xpath_ns(
-        xml, SHIPPER_CONTACT % '/PhoneNumber'
-    )[0].text
-
-    CustomerID = xpath_ns(xml, BASE % '/CustomerID')[0].text
-    ShipmentDate = xpath_ns(xml, BASE % '/ShipmentDate')[0].text
-    GlobalProductCode = xpath_ns(xml, BASE % '/GlobalProductCode')[0].text
+    PieceList = xpath_ns(xml, '//Pieces/Piece')
+    # TODO Check elements for None
+    for ele in PieceList:
+        Piece = {
+            'PieceNumber': ele.find('./PieceNumber').text,
+            'LicensePlate': ele.find('./LicensePlate').text,
+        }
+        Pieces.append(Piece)
 
     parsed_resp = {
         'MessageTime': MessageTime,
         'MessageReference': MessageReference,
         'SiteID': SiteID,
         'ActionNote': ActionNote,
-        'AirwayBillNumber': AirwayBillNumber,
-        'BillingCode': BillingCode,
         'CurrencyCode': CurrencyCode,
-        'Rated': Rated,
-        'WeightUnit': WeightUnit,
-        'CountryCode': CountryCode,
-        'DataIdentifier': DataIdentifier,
-        'LicensePlate': LicensePlate,
-        'LicensePlateBarCode': LicensePlateBarCode,
-        'AWBBarCode': AWBBarCode,
-        'OriginDestnBarcode': OriginDestnBarcode,
-        'DHLRoutingBarCode': DHLRoutingBarCode,
         'Contents': Contents,
-        'Consignee_CompanyName': Consignee_CompanyName,
-        'Consignee_CountryCode': Consignee_CountryCode,
-        'Consignee_CountryName': Consignee_CountryName,
-        'Consignee_PersonName': Consignee_PersonName,
-        'Consignee_PhoneNumber': Consignee_PhoneNumber,
-        'ShipperID': ShipperID,
-        'Shipper_CompanyName': Shipper_CompanyName,
-        'Shipper_AddressLine': Shipper_AddressLine,
-        'Shipper_CountryCode': Shipper_CountryCode,
-        'Shipper_CountryName': Shipper_CountryName,
-        'Shipper_PersonName': Shipper_PersonName,
-        'Shipper_PhoneNumber': Shipper_PhoneNumber,
-        'CustomerID': CustomerID,
         'ShipmentDate': ShipmentDate,
         'GlobalProductCode': GlobalProductCode,
+        'Pieces': Pieces,
+        'LabelImage': LabelImage,
     }
     return parsed_resp

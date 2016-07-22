@@ -2,10 +2,10 @@
 
 import requests
 import json
-from lxml import etree
 
 from helpers import (
-    quote_req, shipment_req, shipment_resp
+    quote_req, quote_resp,
+    shipment_req, shipment_resp
 )
 
 
@@ -14,7 +14,6 @@ class DHLExpressClient(object):
     PROD_URL = "https://xmlpi-ea.dhl.com/XMLShippingServlet"
 
     def __init__(self, siteId, password, accountNo, test_mode=False):
-        self.base_url = self.TEST_URL
         self.siteId = siteId
         self.password = password
         self.accountNo = accountNo
@@ -46,9 +45,9 @@ class Quote(Resource):
     """
 
     def quote_service(self):
-        # TODO Parse xml response
+        # TODO Error handling
         url = self.connection.TEST_URL if self.connection.test_mode else \
-                self.connection.PROD_URL
+                self.connection.PROD_URL  # noqa
         payload = quote_req(
             self.connection.siteId,
             self.connection.password
@@ -57,8 +56,11 @@ class Quote(Resource):
             url,
             data=payload
         )
-        xml = etree.fromstring(response.content)
-        print etree.tostring(xml, pretty_print=True)
+        return json.dumps(
+            quote_resp(response.content),
+            indent=4,
+            sort_keys=True
+        )
 
 
 class Shipment(Resource):
@@ -67,8 +69,9 @@ class Shipment(Resource):
     """
 
     def shipment_service(self):
+        # TODO Error handling
         url = self.connection.TEST_URL if self.connection.test_mode else \
-                self.connection.PROD_URL
+                self.connection.PROD_URL  # noqa
         payload = shipment_req(
             self.connection.siteId,
             self.connection.password,
@@ -89,6 +92,6 @@ if __name__ == '__main__':
     client = DHLExpressClient('siteId', 'password', 'accountNo')
     client.test_mode = True
     # TODO Take request from user
-    # client.quote.quote_service()
+    # response = client.quote.quote_service()
     response = client.shipment.shipment_service()
     print response
