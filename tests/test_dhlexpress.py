@@ -8,22 +8,10 @@ test_dhlexpress
 Tests for `dhlexpress` module.
 """
 
-import pytest
+import pytest 	# noqa
 
 
-from dhlexpress import dhlexpress
-
-
-class TestDhlexpress(object):
-
-    @classmethod
-    def setup_class(cls):
-        pass
-
-    def test_something(self):
-        pass
-
-    @classmethod
-    def teardown_class(cls):
-        pass
-
+def test_shipment_service(resp, dhlexpress):
+    "test shipment service"
+    shipment_resp = dhlexpress.shipment.shipment_service()
+    assert shipment_resp['Rated'] == 'N'
